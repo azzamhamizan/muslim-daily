@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1E7F4B" />
+  <title>Tasbih Digital — Muslim Daily</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <style>
+    .page-scroll { flex: 1; overflow-y: auto; padding-bottom: 1rem; }
+
+    /* Dzikir selector */
+    .dzikir-selector { padding: .75rem 1.25rem; display: flex; gap: .4rem; overflow-x: auto; scrollbar-width: none; }
+    .dzikir-selector::-webkit-scrollbar { display: none; }
+    .dzikir-chip { white-space: nowrap; font-size: .72rem; font-weight: 600; padding: .35rem .75rem; border-radius: 99px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; transition: all .2s; flex-shrink: 0; }
+    .dzikir-chip.active { background: var(--green); border-color: var(--green); color: white; }
+
+    /* Tasbih display */
+    .tasbih-center { display: flex; flex-direction: column; align-items: center; padding: 1rem 1.25rem; }
+    .tasbih-ring { position: relative; width: 200px; height: 200px; }
+    .tasbih-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .progress-bg { fill: none; stroke: var(--bg-elevated); stroke-width: 10; }
+    .progress-fill { fill: none; stroke: url(#tasbih-gradient); stroke-width: 10; stroke-linecap: round; stroke-dasharray: 565.5; stroke-dashoffset: 565.5; transition: stroke-dashoffset .3s ease; }
+    .tasbih-count-wrap { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+    .tasbih-count { display: block; font-size: 3.5rem; font-weight: 300; color: var(--text); letter-spacing: -.02em; line-height: 1; }
+    .tasbih-target { font-size: .85rem; color: var(--text-muted); margin-top: .25rem; }
+
+    .tasbih-arabic { font-family: 'Amiri', serif; font-size: 1.6rem; color: var(--gold-light); margin: .75rem 0 .25rem; text-align: center; }
+    .tasbih-translation { font-size: .82rem; color: var(--text-muted); margin-bottom: .75rem; text-align: center; }
+    .tasbih-rounds { display: flex; gap: 1.5rem; font-size: .82rem; color: var(--text-muted); margin-bottom: 1.25rem; }
+    .tasbih-rounds strong { color: var(--text); }
+
+    .tasbih-btn { width: 110px; height: 110px; border-radius: 50%; background: linear-gradient(135deg, var(--green), var(--green-light)); box-shadow: 0 8px 32px rgba(30,127,75,.4); font-size: 2.2rem; transition: all .15s; margin-bottom: 1.25rem; }
+    .tasbih-btn:active { transform: scale(.94); box-shadow: 0 4px 16px rgba(30,127,75,.3); }
+
+    .tasbih-actions { display: flex; gap: .75rem; margin-bottom: 1.5rem; width: 100%; max-width: 280px; }
+    .tasbih-actions .btn-secondary { flex: 1; text-align: center; }
+
+    /* Custom dzikir input */
+    .custom-wrap { width: 100%; max-width: 320px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: .875rem 1rem; margin-bottom: 1rem; display: none; }
+    .custom-wrap.active { display: block; }
+    .custom-input { width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: .5rem .75rem; font-family: 'Amiri', serif; font-size: 1.1rem; color: var(--text); outline: none; text-align: right; direction: rtl; margin-bottom: .5rem; }
+    .custom-input:focus { border-color: var(--green-light); }
+    .custom-target-row { display: flex; align-items: center; gap: .5rem; }
+    .custom-target-label { font-size: .78rem; color: var(--text-muted); flex: 1; }
+    .custom-target-input { width: 70px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: .4rem .5rem; font-size: .85rem; color: var(--text); outline: none; text-align: center; }
+    .custom-target-input:focus { border-color: var(--green-light); }
+
+    /* History */
+    .history-section { padding: 0 1.25rem 2rem; }
+    .history-item { display: flex; align-items: center; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid var(--border); font-size: .82rem; }
+    .history-name { flex: 1; color: var(--text); font-family: 'Amiri', serif; font-size: .95rem; }
+    .history-count { font-weight: 700; color: var(--green-light); }
+    .history-time { color: var(--text-dim); font-size: .72rem; }
+    .history-empty { text-align: center; color: var(--text-dim); font-size: .85rem; padding: 1rem 0; }
+  </style>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="../index.html" class="icon-btn" style="text-decoration:none;" aria-label="Kembali">←</a>
+      <span class="topbar-logo">📿</span>
+      <span class="topbar-title">Tasbih Digital</span>
+    </div>
+    <div class="topbar-right">
+      <button id="dark-mode-toggle" class="icon-btn" aria-label="Toggle tema"><span>🌙</span></button>
+    </div>
+  </header>
+
+  <div class="page-scroll">
+
+    <!-- Dzikir Chips -->
+    <div class="dzikir-selector">
+      <button class="dzikir-chip active" data-type="subhanallah">Subhanallah</button>
+      <button class="dzikir-chip" data-type="alhamdulillah">Alhamdulillah</button>
+      <button class="dzikir-chip" data-type="allahuakbar">Allahu Akbar</button>
+      <button class="dzikir-chip" data-type="tahlil">Tahlil</button>
+      <button class="dzikir-chip" data-type="istighfar">Istighfar</button>
+      <button class="dzikir-chip" data-type="sholawat">Sholawat</button>
+      <button class="dzikir-chip" data-type="custom">Custom ✏️</button>
+    </div>
+
+    <!-- Tasbih Center -->
+    <div class="tasbih-center">
+
+      <!-- Ring -->
+      <div class="tasbih-ring">
+        <svg viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="tasbih-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#27A261" />
+              <stop offset="100%" stop-color="#C9A84C" />
+            </linearGradient>
+          </defs>
+          <circle class="progress-bg" cx="100" cy="100" r="90" />
+          <circle class="progress-fill" id="progress-fill" cx="100" cy="100" r="90" />
+        </svg>
+        <div class="tasbih-count-wrap">
+          <span class="tasbih-count" id="tasbih-count">0</span>
+          <span class="tasbih-target" id="tasbih-target">/ 33</span>
+        </div>
+      </div>
+
+      <!-- Arabic & Translation -->
+      <div class="tasbih-arabic" id="tasbih-arabic">سُبْحَانَ اللّهِ</div>
+      <div class="tasbih-translation" id="tasbih-translation">Maha Suci Allah</div>
+      <div class="tasbih-rounds">
+        <span>Putaran: <strong id="tasbih-rounds">0</strong></span>
+        <span>Total: <strong id="tasbih-total">0</strong></span>
+      </div>
+
+      <!-- Custom Input -->
+      <div class="custom-wrap" id="custom-wrap">
+        <input type="text" class="custom-input" id="custom-arabic" placeholder="أدخل الذكر هنا" dir="rtl" />
+        <div class="custom-target-row">
+          <span class="custom-target-label">Target hitungan:</span>
+          <input type="number" class="custom-target-input" id="custom-target" value="33" min="1" max="999" />
+        </div>
+      </div>
+
+      <!-- Tasbih Button -->
+      <button class="tasbih-btn" id="tasbih-btn" aria-label="Hitung tasbih">📿</button>
+
+      <!-- Actions -->
+      <div class="tasbih-actions">
+        <button class="btn-secondary" id="tasbih-reset">🔄 Reset</button>
+        <button class="btn-secondary" id="tasbih-save">💾 Simpan</button>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="history-section">
+      <div class="section-header">
+        <h3 class="section-title">📋 Riwayat</h3>
+        <button class="btn-secondary" id="clear-history" style="font-size:.75rem;padding:.3rem .65rem;">Hapus</button>
+      </div>
+      <div id="tasbih-history"></div>
+    </div>
+
+  </div><!-- /page-scroll -->
+</div><!-- /app -->
+
+<div id="toast" class="toast" aria-live="polite"></div>
+<script src="../js/shared.js"></script>
+<script>
+'use strict';
+
+const DZIKIR_DATA = {
+  subhanallah: { arabic: 'سُبْحَانَ اللّهِ', translation: 'Maha Suci Allah', max: 33 },
+  alhamdulillah: { arabic: 'اَلْحَمْدُ لِلّهِ', translation: 'Segala Puji Bagi Allah', max: 33 },
+  allahuakbar: { arabic: 'اَللّهُ أَكْبَرُ', translation: 'Allah Maha Besar', max: 34 },
+  tahlil: { arabic: 'لَا إِلَهَ إِلَّا اللَّهُ', translation: 'Tidak ada Tuhan selain Allah', max: 100 },
+  istighfar: { arabic: 'أَسْتَغْفِرُ اللَّهَ', translation: 'Aku memohon ampunan Allah', max: 100 },
+  sholawat: { arabic: 'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ', translation: 'Ya Allah, limpahkanlah rahmat atas Muhammad', max: 100 },
+  custom: { arabic: '', translation: 'Dzikir custom', max: 33 }
+};
+
+const CIRCUMFERENCE = 2 * Math.PI * 90;
+
+let tState = {
+  type: 'subhanallah',
+  count: parseInt(localStorage.getItem('md-tasbih-count') || '0'),
+  rounds: parseInt(localStorage.getItem('md-tasbih-rounds') || '0'),
+  total: parseInt(localStorage.getItem('md-tasbih-total') || '0'),
+  history: JSON.parse(localStorage.getItem('md-tasbih-history') || '[]')
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  renderTasbih();
+  renderHistory();
+  setupEvents();
+});
+
+function renderTasbih() {
+  const d = tState.type === 'custom'
+    ? { arabic: $('custom-arabic').value || 'لَا إِلَهَ إِلَّا اللَّهُ', translation: 'Dzikir Custom', max: parseInt($('custom-target').value) || 33 }
+    : DZIKIR_DATA[tState.type];
+
+  $('tasbih-count').textContent = tState.count;
+  $('tasbih-target').textContent = `/ ${d.max}`;
+  $('tasbih-arabic').textContent = d.arabic;
+  $('tasbih-translation').textContent = d.translation;
+  $('tasbih-rounds').textContent = tState.rounds;
+  $('tasbih-total').textContent = tState.total;
+
+  const pct = Math.min(tState.count / d.max, 1);
+  $('progress-fill').style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
+}
+
+function tasbihClick() {
+  const d = tState.type === 'custom'
+    ? { max: parseInt($('custom-target').value) || 33 }
+    : DZIKIR_DATA[tState.type];
+
+  tState.count++;
+  tState.total++;
+  vibrate([30]);
+
+  if (tState.count >= d.max) {
+    tState.rounds++;
+    tState.count = 0;
+    showToast(`Putaran ${tState.rounds} selesai! 🎉`);
+    vibrate([50, 50, 50]);
+  }
+
+  localStorage.setItem('md-tasbih-count', tState.count);
+  localStorage.setItem('md-tasbih-rounds', tState.rounds);
+  localStorage.setItem('md-tasbih-total', tState.total);
+  renderTasbih();
+}
+
+function resetTasbih() {
+  tState.count = 0;
+  tState.rounds = 0;
+  localStorage.setItem('md-tasbih-count', 0);
+  localStorage.setItem('md-tasbih-rounds', 0);
+  renderTasbih();
+  showToast('Tasbih direset');
+}
+
+function saveTasbihHistory() {
+  if (tState.total === 0) { showToast('Belum ada hitungan'); return; }
+  const d = tState.type === 'custom'
+    ? { arabic: $('custom-arabic').value || '—', translation: 'Dzikir Custom', max: parseInt($('custom-target').value) || 33 }
+    : DZIKIR_DATA[tState.type];
+
+  const entry = {
+    arabic: d.arabic,
+    count: tState.total,
+    rounds: tState.rounds,
+    time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+    date: todayDateStr()
+  };
+  tState.history.unshift(entry);
+  if (tState.history.length > 20) tState.history.pop();
+  localStorage.setItem('md-tasbih-history', JSON.stringify(tState.history));
+
+  // Reset after save
+  tState.count = 0; tState.rounds = 0; tState.total = 0;
+  localStorage.setItem('md-tasbih-count', 0);
+  localStorage.setItem('md-tasbih-rounds', 0);
+  localStorage.setItem('md-tasbih-total', 0);
+
+  renderTasbih();
+  renderHistory();
+  showToast('Tersimpan ✓');
+}
+
+function renderHistory() {
+  const h = $('tasbih-history');
+  if (!tState.history.length) {
+    h.innerHTML = '<div class="history-empty">Belum ada riwayat tersimpan</div>';
+    return;
+  }
+  h.innerHTML = tState.history.map(e => `
+    <div class="history-item">
+      <span class="history-name">${e.arabic}</span>
+      <span class="history-count">${e.count}×</span>
+      <span class="history-time">${e.time}</span>
+    </div>`).join('');
+}
+
+function switchType(type) {
+  tState.type = type;
+  tState.count = 0; tState.rounds = 0;
+  localStorage.setItem('md-tasbih-count', 0);
+  localStorage.setItem('md-tasbih-rounds', 0);
+  $('custom-wrap').classList.toggle('active', type === 'custom');
+  renderTasbih();
+}
+
+function setupEvents() {
+  $('tasbih-btn').addEventListener('click', tasbihClick);
+  $('tasbih-reset').addEventListener('click', resetTasbih);
+  $('tasbih-save').addEventListener('click', saveTasbihHistory);
+  $('clear-history').addEventListener('click', () => {
+    if (confirm('Hapus semua riwayat tasbih?')) {
+      tState.history = [];
+      localStorage.removeItem('md-tasbih-history');
+      renderHistory();
+      showToast('Riwayat dihapus');
+    }
+  });
+
+  document.querySelectorAll('.dzikir-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.dzikir-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      switchType(chip.dataset.type);
+    });
+  });
+
+  $('custom-arabic').addEventListener('input', renderTasbih);
+  $('custom-target').addEventListener('input', renderTasbih);
+
+  // Keyboard shortcut: space/enter = tap tasbih
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); tasbihClick(); }
+  });
+}
+</script>
+</body>
+</html>

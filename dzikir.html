@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1E7F4B" />
+  <title>Dzikir Harian — Muslim Daily</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <style>
+    .page-scroll { flex: 1; overflow-y: auto; padding-bottom: 1rem; }
+
+    /* Tabs */
+    .dzikir-tabs { display: flex; padding: .75rem 1.25rem; gap: .5rem; }
+    .tab-btn { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: .65rem; font-size: .85rem; font-weight: 600; color: var(--text-muted); transition: all .2s; cursor: pointer; }
+    .tab-btn.active { background: var(--green); border-color: var(--green); color: white; }
+
+    /* Progress */
+    .dzikir-progress-wrap { margin: 0 1.25rem .5rem; height: 6px; background: var(--bg-elevated); border-radius: 99px; overflow: hidden; position: relative; }
+    .dzikir-progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--gold)); border-radius: 99px; transition: width .4s ease; width: 0%; }
+    .dzikir-progress-text { font-size: .72rem; color: var(--text-dim); padding: .2rem 1.25rem; text-align: right; }
+    .dzikir-actions-top { display: flex; justify-content: flex-end; padding: .25rem 1.25rem; }
+
+    /* List */
+    .dzikir-list { padding: .5rem 1.25rem 2rem; display: flex; flex-direction: column; gap: .75rem; }
+    .dzikir-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 1rem; cursor: pointer; transition: all .2s; }
+    .dzikir-item.checked { background: var(--green-pale); border-color: rgba(30,127,75,.4); }
+    .dzikir-header { display: flex; align-items: flex-start; gap: .75rem; margin-bottom: .75rem; }
+    .dzikir-check { width: 22px; height: 22px; min-width: 22px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: .7rem; color: transparent; transition: all .2s; margin-top: 2px; }
+    .dzikir-item.checked .dzikir-check { background: var(--green); border-color: var(--green); color: white; }
+    .dzikir-title-wrap { flex: 1; }
+    .dzikir-name { font-size: .9rem; font-weight: 600; }
+    .dzikir-count-badge { font-size: .7rem; color: var(--text-muted); background: var(--bg-elevated); padding: .1rem .4rem; border-radius: 99px; margin-left: .4rem; }
+    .dzikir-arabic-text { font-family: 'Amiri', serif; font-size: 1.25rem; color: var(--gold-light); text-align: right; line-height: 1.9; margin-bottom: .5rem; padding: .5rem 0; border-top: 1px solid var(--border); }
+    .dzikir-translation { font-size: .82rem; color: var(--text-muted); line-height: 1.6; }
+  </style>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="../index.html" class="icon-btn" style="text-decoration:none;" aria-label="Kembali">←</a>
+      <span class="topbar-logo">📖</span>
+      <span class="topbar-title">Dzikir Harian</span>
+    </div>
+    <div class="topbar-right">
+      <button id="dark-mode-toggle" class="icon-btn" aria-label="Toggle tema"><span>🌙</span></button>
+    </div>
+  </header>
+
+  <div class="page-scroll">
+    <div class="page-header">
+      <h2 class="page-title">Dzikir Harian</h2>
+      <p class="page-subtitle">Pagi & Petang — setiap hari</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="dzikir-tabs">
+      <button class="tab-btn active" data-tab="pagi">🌅 Dzikir Pagi</button>
+      <button class="tab-btn" data-tab="petang">🌆 Dzikir Petang</button>
+    </div>
+
+    <!-- Progress -->
+    <div class="dzikir-progress-wrap">
+      <div class="dzikir-progress-fill" id="dzikir-progress-fill"></div>
+    </div>
+    <div class="dzikir-progress-text" id="dzikir-progress-text">0 / 0 selesai</div>
+
+    <div class="dzikir-actions-top">
+      <button class="btn-secondary" id="dzikir-reset-all" style="font-size:.75rem;padding:.3rem .65rem;">🔄 Reset Semua</button>
+    </div>
+
+    <!-- Dzikir List -->
+    <div id="dzikir-list" class="dzikir-list"></div>
+
+  </div><!-- /page-scroll -->
+</div><!-- /app -->
+
+<div id="toast" class="toast" aria-live="polite"></div>
+<script src="../js/shared.js"></script>
+<script>
+'use strict';
+
+const DZIKIR = {
+  pagi: [
+    { id: 'p1', name: 'Ayat Kursi', arabic: 'اللَّهُ لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ', translation: 'Allah, tidak ada Tuhan melainkan Dia Yang Hidup kekal lagi terus menerus mengurus makhluk-Nya. Tidak mengantuk dan tidak tidur. Kepunyaan-Nya apa yang ada di langit dan di bumi.', count: 1 },
+    { id: 'p2', name: 'Istighfar Pagi', arabic: 'أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ الَّذِي لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ وَأَتُوبُ إِلَيْهِ', translation: 'Aku memohon ampun kepada Allah Yang Maha Agung, yang tidak ada Tuhan selain Dia, Yang Maha Hidup dan Maha Berdiri Sendiri, dan aku bertaubat kepada-Nya.', count: 3 },
+    { id: 'p3', name: 'Doa Pagi', arabic: 'اللَّهُمَّ بِكَ أَصْبَحْنَا وَبِكَ أَمْسَيْنَا وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ', translation: 'Ya Allah, dengan rahmat-Mu kami memasuki waktu pagi, dengan rahmat-Mu kami memasuki waktu sore, dengan rahmat-Mu kami hidup dan mati, dan kepada-Mu kami kembali.', count: 1 },
+    { id: 'p4', name: 'Sayyidul Istighfar', arabic: 'اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ خَلَقْتَنِي وَأَنَا عَبْدُكَ وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ', translation: 'Ya Allah, Engkau adalah Tuhanku, tidak ada Tuhan yang berhak disembah selain Engkau. Engkau telah menciptakanku dan aku adalah hamba-Mu dan aku di atas perjanjian-Mu.', count: 1 },
+    { id: 'p5', name: 'Sholawat Pagi', arabic: 'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ', translation: 'Ya Allah, limpahkanlah rahmat atas Muhammad dan atas keluarga Muhammad.', count: 10 },
+    { id: 'p6', name: 'Subhanallah wa Bihamdih', arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', translation: 'Maha Suci Allah dan segala puji bagi-Nya.', count: 100 },
+    { id: 'p7', name: 'Doa Perlindungan', arabic: 'بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ', translation: 'Dengan nama Allah yang bersama nama-Nya tidak ada yang dapat memberi mudharat di bumi maupun di langit, dan Dia Maha Mendengar lagi Maha Mengetahui.', count: 3 }
+  ],
+  petang: [
+    { id: 'e1', name: 'Doa Petang', arabic: 'اللَّهُمَّ بِكَ أَمْسَيْنَا وَبِكَ أَصْبَحْنَا وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَإِلَيْكَ الْمَصِيرُ', translation: 'Ya Allah, dengan rahmat-Mu kami memasuki waktu sore, dan dengan rahmat-Mu kami memasuki waktu pagi, dengan rahmat-Mu kami hidup dan mati, dan kepada-Mu kami kembali.', count: 1 },
+    { id: 'e2', name: 'Istighfar Petang', arabic: 'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ', translation: 'Aku memohon ampunan Allah dan bertaubat kepada-Nya.', count: 100 },
+    { id: 'e3', name: 'Doa Perlindungan Malam', arabic: 'أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ', translation: 'Aku berlindung dengan kalimat-kalimat Allah yang sempurna dari kejahatan apa yang Dia ciptakan.', count: 3 },
+    { id: 'e4', name: 'Sholawat Petang', arabic: 'اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ', translation: 'Ya Allah, curahkanlah shalawat, salam dan berkah atas Nabi kami Muhammad.', count: 10 },
+    { id: 'e5', name: 'Subhanallah', arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ', translation: 'Maha Suci Allah dan segala puji bagi-Nya sebanyak bilangan makhluk-Nya.', count: 3 },
+    { id: 'e6', name: 'Surat Al-Ikhlas', arabic: 'قُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ', translation: 'Katakanlah: Dialah Allah Yang Maha Esa, Allah tempat meminta segala sesuatu, tidak beranak dan tidak pula diperanakkan, dan tidak ada seorangpun yang setara dengan Dia.', count: 3 },
+    { id: 'e7', name: 'Doa Sebelum Tidur', arabic: 'بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا', translation: 'Dengan nama-Mu ya Allah, aku mati dan aku hidup.', count: 1 }
+  ]
+};
+
+let dState = { tab: 'pagi', checked: JSON.parse(localStorage.getItem('md-dzikir-checked') || '{}') };
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  renderDzikir();
+  setupEvents();
+});
+
+function saveChecked() { localStorage.setItem('md-dzikir-checked', JSON.stringify(dState.checked)); }
+
+function renderDzikir() {
+  const list = DZIKIR[dState.tab];
+  const checked = dState.checked[dState.tab] || [];
+  const done = list.filter(d => checked.includes(d.id)).length;
+
+  $('dzikir-progress-fill').style.width = `${(done / list.length) * 100}%`;
+  $('dzikir-progress-text').textContent = `${done} / ${list.length} selesai`;
+
+  $('dzikir-list').innerHTML = list.map(d => {
+    const isChecked = checked.includes(d.id);
+    return `
+      <div class="dzikir-item ${isChecked ? 'checked' : ''}" data-id="${d.id}">
+        <div class="dzikir-header">
+          <div class="dzikir-check">${isChecked ? '✓' : ''}</div>
+          <div class="dzikir-title-wrap">
+            <span class="dzikir-name">${d.name}<span class="dzikir-count-badge">${d.count}×</span></span>
+          </div>
+        </div>
+        <div class="dzikir-arabic-text">${d.arabic}</div>
+        <div class="dzikir-translation">${d.translation}</div>
+      </div>`;
+  }).join('');
+
+  $('dzikir-list').querySelectorAll('.dzikir-item').forEach(el => {
+    el.addEventListener('click', () => toggleDzikir(el.dataset.id));
+  });
+}
+
+function toggleDzikir(id) {
+  const tab = dState.tab;
+  if (!dState.checked[tab]) dState.checked[tab] = [];
+  const idx = dState.checked[tab].indexOf(id);
+  if (idx === -1) { dState.checked[tab].push(id); vibrate([30]); }
+  else dState.checked[tab].splice(idx, 1);
+  saveChecked();
+  renderDzikir();
+  const list = DZIKIR[tab];
+  const done = (dState.checked[tab] || []).length;
+  if (done === list.length) showToast(`✅ Dzikir ${tab === 'pagi' ? 'Pagi' : 'Petang'} selesai! Alhamdulillah`);
+}
+
+function setupEvents() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      dState.tab = btn.dataset.tab;
+      renderDzikir();
+    });
+  });
+  $('dzikir-reset-all').addEventListener('click', () => {
+    dState.checked[dState.tab] = [];
+    saveChecked();
+    renderDzikir();
+    showToast('Dzikir direset');
+  });
+}
+</script>
+</body>
+</html>

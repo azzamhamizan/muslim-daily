@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1E7F4B" />
+  <title>Asmaul Husna — Muslim Daily</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <style>
+    .page-scroll { flex: 1; overflow-y: auto; padding-bottom: 1rem; }
+
+    .progress-wrap { margin: .5rem 1.25rem .25rem; height: 6px; background: var(--bg-elevated); border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 99px; transition: width .5s ease; width: 0%; }
+    .progress-text { display: block; text-align: right; font-size: .72rem; color: var(--text-dim); padding: .25rem 1.25rem 0; }
+
+    .search-wrap { position: relative; padding: .5rem 1.25rem .5rem; }
+    .search-input { width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: .65rem 1rem .65rem 2.6rem; font-size: .875rem; color: var(--text); outline: none; font-family: inherit; transition: border-color .2s; }
+    .search-input:focus { border-color: var(--gold); }
+    .search-icon { position: absolute; left: 2.25rem; top: 50%; transform: translateY(-50%); font-size: 1rem; pointer-events: none; }
+
+    .asmaul-list { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; padding: .25rem 1.25rem 2rem; }
+    .asmaul-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: .875rem; cursor: pointer; transition: all .2s; text-align: center; position: relative; }
+    .asmaul-item.memorized { background: rgba(201,168,76,.08); border-color: rgba(201,168,76,.3); }
+    .asmaul-item:active { transform: scale(.96); }
+    .asmaul-num { font-size: .62rem; color: var(--text-dim); font-weight: 600; position: absolute; top: .5rem; left: .6rem; }
+    .asmaul-check { position: absolute; top: .5rem; right: .6rem; font-size: .7rem; color: var(--gold); opacity: 0; transition: opacity .2s; }
+    .asmaul-item.memorized .asmaul-check { opacity: 1; }
+    .asmaul-arabic { font-family: 'Amiri', serif; font-size: 1.3rem; color: var(--gold-light); display: block; margin: .3rem 0 .25rem; }
+    .asmaul-latin { font-size: .7rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: .15rem; }
+    .asmaul-arti { font-size: .68rem; color: var(--text-dim); display: block; line-height: 1.4; }
+  </style>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="../index.html" class="icon-btn" style="text-decoration:none;" aria-label="Kembali">←</a>
+      <span class="topbar-logo">✨</span>
+      <span class="topbar-title">Asmaul Husna</span>
+    </div>
+    <div class="topbar-right">
+      <button id="dark-mode-toggle" class="icon-btn" aria-label="Toggle tema"><span>🌙</span></button>
+    </div>
+  </header>
+
+  <div class="page-scroll">
+    <div class="page-header">
+      <h2 class="page-title">Asmaul Husna</h2>
+      <p class="page-subtitle">99 Nama Allah Yang Mulia — klik untuk menandai hafal</p>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-wrap"><div class="progress-fill" id="asmaul-progress-bar"></div></div>
+    <span class="progress-text" id="asmaul-progress-text">0 / 99 dihafal</span>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="asmaul-search" class="search-input" placeholder="Cari nama..." />
+    </div>
+
+    <!-- List -->
+    <div id="asmaul-list" class="asmaul-list"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast" aria-live="polite"></div>
+<script src="../js/shared.js"></script>
+<script>
+'use strict';
+
+const ASMAUL = [
+  {num:1,arabic:"الرَّحْمَنُ",latin:"Ar-Rahman",arti:"Yang Maha Pengasih"},
+  {num:2,arabic:"الرَّحِيمُ",latin:"Ar-Rahim",arti:"Yang Maha Penyayang"},
+  {num:3,arabic:"الْمَلِكُ",latin:"Al-Malik",arti:"Maha Raja"},
+  {num:4,arabic:"الْقُدُّوسُ",latin:"Al-Quddus",arti:"Yang Maha Suci"},
+  {num:5,arabic:"السَّلَامُ",latin:"As-Salam",arti:"Yang Memberi Kesejahteraan"},
+  {num:6,arabic:"الْمُؤْمِنُ",latin:"Al-Mu'min",arti:"Yang Memberi Keamanan"},
+  {num:7,arabic:"الْمُهَيْمِنُ",latin:"Al-Muhaymin",arti:"Yang Maha Mengawasi"},
+  {num:8,arabic:"الْعَزِيزُ",latin:"Al-Aziz",arti:"Yang Maha Perkasa"},
+  {num:9,arabic:"الْجَبَّارُ",latin:"Al-Jabbar",arti:"Yang Maha Berkuasa"},
+  {num:10,arabic:"الْمُتَكَبِّرُ",latin:"Al-Mutakabbir",arti:"Yang Memiliki Keagungan"},
+  {num:11,arabic:"الْخَالِقُ",latin:"Al-Khaliq",arti:"Yang Maha Menciptakan"},
+  {num:12,arabic:"الْبَارِئُ",latin:"Al-Bari",arti:"Yang Mengadakan"},
+  {num:13,arabic:"الْمُصَوِّرُ",latin:"Al-Mushawwir",arti:"Yang Membentuk Rupa"},
+  {num:14,arabic:"الْغَفَّارُ",latin:"Al-Ghaffar",arti:"Yang Maha Pengampun"},
+  {num:15,arabic:"الْقَهَّارُ",latin:"Al-Qahhar",arti:"Yang Maha Perkasa"},
+  {num:16,arabic:"الْوَهَّابُ",latin:"Al-Wahhab",arti:"Yang Maha Pemberi"},
+  {num:17,arabic:"الرَّزَّاقُ",latin:"Ar-Razzaq",arti:"Yang Maha Pemberi Rezeki"},
+  {num:18,arabic:"الْفَتَّاحُ",latin:"Al-Fattah",arti:"Yang Maha Membukakan"},
+  {num:19,arabic:"الْعَلِيمُ",latin:"Al-Alim",arti:"Yang Maha Mengetahui"},
+  {num:20,arabic:"الْقَابِضُ",latin:"Al-Qabidh",arti:"Yang Maha Menyempitkan"},
+  {num:21,arabic:"الْبَاسِطُ",latin:"Al-Basith",arti:"Yang Maha Melapangkan"},
+  {num:22,arabic:"الْخَافِضُ",latin:"Al-Khafidh",arti:"Yang Merendahkan"},
+  {num:23,arabic:"الرَّافِعُ",latin:"Ar-Rafi",arti:"Yang Meninggikan"},
+  {num:24,arabic:"الْمُعِزُّ",latin:"Al-Muizz",arti:"Yang Memuliakan"},
+  {num:25,arabic:"الْمُذِلُّ",latin:"Al-Mudzil",arti:"Yang Menghinakan"},
+  {num:26,arabic:"السَّمِيعُ",latin:"As-Sami",arti:"Yang Maha Mendengar"},
+  {num:27,arabic:"الْبَصِيرُ",latin:"Al-Bashir",arti:"Yang Maha Melihat"},
+  {num:28,arabic:"الْحَكَمُ",latin:"Al-Hakam",arti:"Yang Maha Memutuskan"},
+  {num:29,arabic:"الْعَدْلُ",latin:"Al-Adl",arti:"Yang Maha Adil"},
+  {num:30,arabic:"اللَّطِيفُ",latin:"Al-Lathif",arti:"Yang Maha Lembut"},
+  {num:31,arabic:"الْخَبِيرُ",latin:"Al-Khabir",arti:"Yang Maha Mengenal"},
+  {num:32,arabic:"الْحَلِيمُ",latin:"Al-Halim",arti:"Yang Maha Penyantun"},
+  {num:33,arabic:"الْعَظِيمُ",latin:"Al-Azhim",arti:"Yang Maha Agung"},
+  {num:34,arabic:"الْغَفُورُ",latin:"Al-Ghafur",arti:"Yang Maha Pengampun"},
+  {num:35,arabic:"الشَّكُورُ",latin:"As-Syakur",arti:"Yang Maha Pembalas Budi"},
+  {num:36,arabic:"الْعَلِيُّ",latin:"Al-Ali",arti:"Yang Maha Tinggi"},
+  {num:37,arabic:"الْكَبِيرُ",latin:"Al-Kabir",arti:"Yang Maha Besar"},
+  {num:38,arabic:"الْحَفِيظُ",latin:"Al-Hafizh",arti:"Yang Maha Memelihara"},
+  {num:39,arabic:"الْمُقِيتُ",latin:"Al-Muqit",arti:"Yang Maha Pemberi Kecukupan"},
+  {num:40,arabic:"الْحَسِيبُ",latin:"Al-Hasib",arti:"Yang Maha Membuat Perhitungan"},
+  {num:41,arabic:"الْجَلِيلُ",latin:"Al-Jalil",arti:"Yang Maha Luhur"},
+  {num:42,arabic:"الْكَرِيمُ",latin:"Al-Karim",arti:"Yang Maha Mulia"},
+  {num:43,arabic:"الرَّقِيبُ",latin:"Ar-Raqib",arti:"Yang Maha Mengawasi"},
+  {num:44,arabic:"الْمُجِيبُ",latin:"Al-Mujib",arti:"Yang Maha Mengabulkan"},
+  {num:45,arabic:"الْوَاسِعُ",latin:"Al-Wasi",arti:"Yang Maha Luas"},
+  {num:46,arabic:"الْحَكِيمُ",latin:"Al-Hakim",arti:"Yang Maha Bijaksana"},
+  {num:47,arabic:"الْوَدُودُ",latin:"Al-Wadud",arti:"Yang Maha Mengasihi"},
+  {num:48,arabic:"الْمَجِيدُ",latin:"Al-Majid",arti:"Yang Maha Mulia"},
+  {num:49,arabic:"الْبَاعِثُ",latin:"Al-Baith",arti:"Yang Maha Membangkitkan"},
+  {num:50,arabic:"الشَّهِيدُ",latin:"As-Syahid",arti:"Yang Maha Menyaksikan"},
+  {num:51,arabic:"الْحَقُّ",latin:"Al-Haqq",arti:"Yang Maha Benar"},
+  {num:52,arabic:"الْوَكِيلُ",latin:"Al-Wakil",arti:"Yang Maha Memelihara"},
+  {num:53,arabic:"الْقَوِيُّ",latin:"Al-Qawi",arti:"Yang Maha Kuat"},
+  {num:54,arabic:"الْمَتِينُ",latin:"Al-Matin",arti:"Yang Maha Kokoh"},
+  {num:55,arabic:"الْوَلِيُّ",latin:"Al-Wali",arti:"Yang Maha Melindungi"},
+  {num:56,arabic:"الْحَمِيدُ",latin:"Al-Hamid",arti:"Yang Maha Terpuji"},
+  {num:57,arabic:"الْمُحْصِي",latin:"Al-Muhshi",arti:"Yang Maha Menghitung"},
+  {num:58,arabic:"الْمُبْدِئُ",latin:"Al-Mubdi",arti:"Yang Maha Memulai"},
+  {num:59,arabic:"الْمُعِيدُ",latin:"Al-Muid",arti:"Yang Maha Mengembalikan"},
+  {num:60,arabic:"الْمُحْيِي",latin:"Al-Muhyi",arti:"Yang Maha Menghidupkan"},
+  {num:61,arabic:"الْمُمِيتُ",latin:"Al-Mumit",arti:"Yang Maha Mematikan"},
+  {num:62,arabic:"الْحَيُّ",latin:"Al-Hayy",arti:"Yang Maha Hidup"},
+  {num:63,arabic:"الْقَيُّومُ",latin:"Al-Qayyum",arti:"Yang Maha Mandiri"},
+  {num:64,arabic:"الْوَاجِدُ",latin:"Al-Wajid",arti:"Yang Maha Menemukan"},
+  {num:65,arabic:"الْمَاجِدُ",latin:"Al-Majid",arti:"Yang Maha Mulia"},
+  {num:66,arabic:"الْوَاحِدُ",latin:"Al-Wahid",arti:"Yang Maha Tunggal"},
+  {num:67,arabic:"الْأَحَدُ",latin:"Al-Ahad",arti:"Yang Maha Esa"},
+  {num:68,arabic:"الصَّمَدُ",latin:"As-Shamad",arti:"Yang Menjadi Tumpuan"},
+  {num:69,arabic:"الْقَادِرُ",latin:"Al-Qadir",arti:"Yang Maha Menentukan"},
+  {num:70,arabic:"الْمُقْتَدِرُ",latin:"Al-Muqtadir",arti:"Yang Maha Berkuasa"},
+  {num:71,arabic:"الْمُقَدِّمُ",latin:"Al-Muqaddim",arti:"Yang Maha Mendahulukan"},
+  {num:72,arabic:"الْمُؤَخِّرُ",latin:"Al-Muakhkhir",arti:"Yang Maha Mengakhirkan"},
+  {num:73,arabic:"الْأَوَّلُ",latin:"Al-Awwal",arti:"Yang Maha Awal"},
+  {num:74,arabic:"الْآخِرُ",latin:"Al-Akhir",arti:"Yang Maha Akhir"},
+  {num:75,arabic:"الظَّاهِرُ",latin:"Az-Zahir",arti:"Yang Maha Nyata"},
+  {num:76,arabic:"الْبَاطِنُ",latin:"Al-Bathin",arti:"Yang Maha Ghaib"},
+  {num:77,arabic:"الْوَالِي",latin:"Al-Wali",arti:"Yang Maha Memerintah"},
+  {num:78,arabic:"الْمُتَعَالِي",latin:"Al-Mutaali",arti:"Yang Maha Tinggi"},
+  {num:79,arabic:"الْبَرُّ",latin:"Al-Barr",arti:"Yang Maha Dermawan"},
+  {num:80,arabic:"التَّوَّابُ",latin:"At-Tawwab",arti:"Yang Maha Penerima Taubat"},
+  {num:81,arabic:"الْمُنْتَقِمُ",latin:"Al-Muntaqim",arti:"Yang Maha Menghukum"},
+  {num:82,arabic:"الْعَفُوُّ",latin:"Al-Afuww",arti:"Yang Maha Pemaaf"},
+  {num:83,arabic:"الرَّؤُوفُ",latin:"Ar-Rauf",arti:"Yang Maha Pengasih"},
+  {num:84,arabic:"مَالِكُ الْمُلْكِ",latin:"Malikul Mulk",arti:"Yang Memiliki Kerajaan"},
+  {num:85,arabic:"ذُو الْجَلَالِ وَالْإِكْرَامِ",latin:"Dzul Jalali wal Ikram",arti:"Yang Memiliki Kebesaran"},
+  {num:86,arabic:"الْمُقْسِطُ",latin:"Al-Muqsith",arti:"Yang Maha Adil"},
+  {num:87,arabic:"الْجَامِعُ",latin:"Al-Jami",arti:"Yang Maha Mengumpulkan"},
+  {num:88,arabic:"الْغَنِيُّ",latin:"Al-Ghani",arti:"Yang Maha Kaya"},
+  {num:89,arabic:"الْمُغْنِي",latin:"Al-Mughni",arti:"Yang Maha Pemberi Kekayaan"},
+  {num:90,arabic:"الْمَانِعُ",latin:"Al-Mani",arti:"Yang Maha Mencegah"},
+  {num:91,arabic:"الضَّارُّ",latin:"Ad-Dharr",arti:"Yang Mendatangkan Mudharat"},
+  {num:92,arabic:"النَّافِعُ",latin:"An-Nafi",arti:"Yang Memberi Manfaat"},
+  {num:93,arabic:"النُّورُ",latin:"An-Nur",arti:"Yang Maha Bercahaya"},
+  {num:94,arabic:"الْهَادِي",latin:"Al-Hadi",arti:"Yang Maha Pemberi Petunjuk"},
+  {num:95,arabic:"الْبَدِيعُ",latin:"Al-Badi",arti:"Yang Maha Pencipta"},
+  {num:96,arabic:"الْبَاقِي",latin:"Al-Baqi",arti:"Yang Maha Kekal"},
+  {num:97,arabic:"الْوَارِثُ",latin:"Al-Warits",arti:"Yang Maha Mewarisi"},
+  {num:98,arabic:"الرَّشِيدُ",latin:"Ar-Rasyid",arti:"Yang Maha Pandai"},
+  {num:99,arabic:"الصَّبُورُ",latin:"As-Shabur",arti:"Yang Maha Sabar"}
+];
+
+let asmaSearch = '';
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  renderAsmaul();
+  $('asmaul-search').addEventListener('input', e => { asmaSearch = e.target.value; renderAsmaul(); });
+});
+
+function getMemorized() { return JSON.parse(localStorage.getItem('md-asmaul-memorized') || '[]'); }
+
+function renderAsmaul() {
+  const memorized = getMemorized();
+  let list = ASMAUL;
+  if (asmaSearch.trim()) {
+    const q = asmaSearch.toLowerCase();
+    list = list.filter(a => a.latin.toLowerCase().includes(q) || a.arti.toLowerCase().includes(q) || String(a.num).includes(q));
+  }
+
+  $('asmaul-list').innerHTML = list.map(a => {
+    const isMem = memorized.includes(a.num);
+    return `<div class="asmaul-item ${isMem ? 'memorized' : ''}" data-num="${a.num}">
+      <span class="asmaul-num">${a.num}</span>
+      <span class="asmaul-check">✓</span>
+      <span class="asmaul-arabic">${a.arabic}</span>
+      <span class="asmaul-latin">${a.latin}</span>
+      <span class="asmaul-arti">${a.arti}</span>
+    </div>`;
+  }).join('');
+
+  $('asmaul-list').querySelectorAll('.asmaul-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const num = parseInt(el.dataset.num);
+      const mem = getMemorized();
+      const idx = mem.indexOf(num);
+      if (idx === -1) { mem.push(num); showToast(`${ASMAUL[num - 1].latin} — dihafal ✓`); }
+      else { mem.splice(idx, 1); showToast('Tanda hafal dihapus'); }
+      localStorage.setItem('md-asmaul-memorized', JSON.stringify(mem));
+      renderAsmaul();
+      if (mem.length === 99) showToast('🌟 MasyaAllah! Semua 99 Asmaul Husna dihafal!', 4000);
+    });
+  });
+
+  const count = memorized.length;
+  $('asmaul-progress-bar').style.width = `${(count / 99) * 100}%`;
+  $('asmaul-progress-text').textContent = `${count} / 99 dihafal`;
+}
+</script>
+</body>
+</html>

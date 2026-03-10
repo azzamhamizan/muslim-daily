@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1E7F4B" />
+  <title>Arah Kiblat — Muslim Daily</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <style>
+    .page-scroll { flex: 1; overflow-y: auto; padding-bottom: 1rem; }
+
+    /* Compass */
+    .compass-section { display: flex; flex-direction: column; align-items: center; padding: 1.5rem 1.25rem; }
+    .compass-wrap { position: relative; width: 260px; height: 260px; margin-bottom: 1.5rem; }
+    .compass-ring { width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--border); background: var(--bg-card); display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 0 40px rgba(30,127,75,.1); }
+    .compass-markers { position: absolute; inset: 0; }
+    .compass-n, .compass-s, .compass-e, .compass-w { position: absolute; font-size: .72rem; font-weight: 800; color: var(--text-dim); }
+    .compass-n { top: 8px; left: 50%; transform: translateX(-50%); color: var(--green-light); }
+    .compass-s { bottom: 8px; left: 50%; transform: translateX(-50%); }
+    .compass-e { right: 8px; top: 50%; transform: translateY(-50%); }
+    .compass-w { left: 8px; top: 50%; transform: translateY(-50%); }
+
+    /* Compass needle */
+    .needle-wrap { position: absolute; width: 100%; height: 100%; transition: transform .2s ease; }
+    .needle { position: absolute; left: 50%; top: 50%; transform-origin: bottom center; }
+    .needle-north { width: 3px; height: 90px; background: linear-gradient(to bottom, #ef4444, rgba(239,68,68,0)); margin-left: -1.5px; bottom: 50%; border-radius: 4px 4px 0 0; }
+    .needle-south { width: 3px; height: 90px; background: linear-gradient(to top, #64748b, rgba(100,116,139,0)); margin-left: -1.5px; top: 50%; border-radius: 0 0 4px 4px; }
+    .needle-center { width: 12px; height: 12px; border-radius: 50%; background: var(--bg-elevated); border: 2px solid var(--border); position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+    /* Kiblat arrow */
+    .kiblat-arrow-wrap { position: absolute; width: 100%; height: 100%; transition: transform .4s ease; }
+    .kiblat-arrow { position: absolute; left: 50%; top: 12px; margin-left: -16px; width: 32px; height: 50px; display: flex; flex-direction: column; align-items: center; }
+    .ka-icon { font-size: 1.4rem; }
+    .ka-line { width: 2px; height: 24px; background: linear-gradient(to bottom, var(--gold), transparent); margin-top: 2px; border-radius: 1px; }
+
+    .kiblat-degree { font-size: 2.4rem; font-weight: 300; color: var(--gold-light); margin-bottom: .25rem; }
+    .kiblat-label { font-size: .875rem; color: var(--text-muted); margin-bottom: .75rem; }
+    .kiblat-location { font-size: .8rem; color: var(--text-dim); background: var(--bg-card); border: 1px solid var(--border); border-radius: 99px; padding: .3rem .75rem; }
+
+    /* Info cards */
+    .info-cards { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; padding: 0 1.25rem 1rem; }
+    .info-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; }
+    .info-card-label { font-size: .68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .35rem; font-weight: 600; }
+    .info-card-value { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .info-card-sub { font-size: .72rem; color: var(--text-muted); margin-top: .1rem; }
+
+    /* Start button */
+    .start-section { padding: 1rem 1.25rem; text-align: center; }
+    .start-section p { font-size: .85rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.6; }
+
+    /* Status */
+    .status-badge { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 600; padding: .35rem .875rem; border-radius: 99px; margin-bottom: 1rem; }
+    .status-active { background: rgba(30,127,75,.15); color: var(--green-light); }
+    .status-inactive { background: rgba(248,113,113,.1); color: #f87171; }
+
+    /* Loading */
+    .loading-wrap { display: flex; flex-direction: column; align-items: center; padding: 2rem; gap: 1rem; }
+    .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--green-light); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="../index.html" class="icon-btn" style="text-decoration:none;" aria-label="Kembali">←</a>
+      <span class="topbar-logo">🧭</span>
+      <span class="topbar-title">Arah Kiblat</span>
+    </div>
+    <div class="topbar-right">
+      <button id="dark-mode-toggle" class="icon-btn" aria-label="Toggle tema"><span>🌙</span></button>
+    </div>
+  </header>
+
+  <div class="page-scroll">
+    <div class="page-header">
+      <h2 class="page-title">Arah Kiblat</h2>
+      <p class="page-subtitle">Ka'bah, Makkah Al-Mukarramah</p>
+    </div>
+
+    <!-- Start section (shown initially) -->
+    <div id="start-section" class="start-section">
+      <p>Gunakan kompas digital untuk menemukan arah kiblat berdasarkan lokasi Anda saat ini.</p>
+      <button class="btn-primary" id="start-kiblat" style="margin:0 auto;display:flex;">
+        🧭 Mulai Kompas
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading-kiblat" class="loading-wrap hidden">
+      <div class="loading-spinner"></div>
+      <p style="font-size:.85rem;color:var(--text-muted);">Mendeteksi lokasi & kalibrasi kompas...</p>
+    </div>
+
+    <!-- Error -->
+    <div id="error-kiblat" class="loading-wrap hidden" style="gap:.75rem;">
+      <div style="font-size:2rem;">⚠️</div>
+      <p id="error-kiblat-msg" style="font-size:.85rem;color:var(--text-muted);text-align:center;"></p>
+      <button class="btn-primary" id="retry-kiblat">Coba Lagi</button>
+    </div>
+
+    <!-- Compass section -->
+    <div id="compass-section" class="compass-section hidden">
+      <div class="status-badge status-active" id="compass-status">● Kompas Aktif</div>
+
+      <div class="compass-wrap">
+        <div class="compass-ring">
+          <!-- Compass markers -->
+          <div class="compass-markers">
+            <span class="compass-n">U</span>
+            <span class="compass-s">S</span>
+            <span class="compass-e">T</span>
+            <span class="compass-w">B</span>
+          </div>
+          <!-- Device compass needle -->
+          <div class="needle-wrap" id="needle-wrap">
+            <div class="needle needle-north" style="position:absolute;left:50%;bottom:50%;margin-left:-1.5px;"></div>
+            <div class="needle needle-south" style="position:absolute;left:50%;top:50%;margin-left:-1.5px;width:3px;height:90px;background:linear-gradient(to top,#64748b,rgba(100,116,139,0));border-radius:0 0 4px 4px;"></div>
+            <div class="needle-center"></div>
+          </div>
+          <!-- Kiblat arrow -->
+          <div class="kiblat-arrow-wrap" id="kiblat-arrow-wrap">
+            <div class="kiblat-arrow">
+              <span class="ka-icon">🕋</span>
+              <div class="ka-line"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="kiblat-degree" id="kiblat-degree">—°</div>
+      <div class="kiblat-label">Arah Kiblat dari Utara</div>
+      <div class="kiblat-location" id="kiblat-loc">📍 Memuat...</div>
+    </div>
+
+    <!-- Info Cards -->
+    <div id="info-cards" class="info-cards hidden">
+      <div class="info-card">
+        <div class="info-card-label">Latitude</div>
+        <div class="info-card-value" id="info-lat">—</div>
+        <div class="info-card-sub">Lintang</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Longitude</div>
+        <div class="info-card-value" id="info-lng">—</div>
+        <div class="info-card-sub">Bujur</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Jarak ke Ka'bah</div>
+        <div class="info-card-value" id="info-dist">—</div>
+        <div class="info-card-sub">kilometer</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Heading Kompas</div>
+        <div class="info-card-value" id="info-heading">—</div>
+        <div class="info-card-sub">Arah perangkat</div>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div style="padding:0 1.25rem 2rem;margin-top:.5rem;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1rem;">
+        <div style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">💡 Tips</div>
+        <p style="font-size:.82rem;color:var(--text-muted);line-height:1.65;">Jauhkan perangkat dari benda logam dan magnet. Kalibrasi dengan gerakan angka 8 di udara. Pastikan GPS aktif untuk hasil terbaik.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast" class="toast" aria-live="polite"></div>
+<script src="../js/shared.js"></script>
+<script>
+'use strict';
+
+const KAABA = { lat: 21.3891, lng: 39.8579 };
+let kState = { compassHeading: 0, qiblaAngle: 0, watchId: null };
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  $('start-kiblat').addEventListener('click', startKiblat);
+  $('retry-kiblat').addEventListener('click', startKiblat);
+});
+
+function toRad(d) { return d * Math.PI / 180; }
+function toDeg(r) { return r * 180 / Math.PI; }
+
+function calcQibla(lat, lng) {
+  const dLng = toRad(KAABA.lng - lng);
+  const lat1 = toRad(lat), lat2 = toRad(KAABA.lat);
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
+function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+async function startKiblat() {
+  $('start-section').classList.add('hidden');
+  $('error-kiblat').classList.add('hidden');
+  $('loading-kiblat').classList.remove('hidden');
+
+  if (!navigator.geolocation) {
+    showError('Geolokasi tidak didukung perangkat ini.');
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { latitude, longitude } = pos.coords;
+    kState.qiblaAngle = calcQibla(latitude, longitude);
+    const dist = calcDistance(latitude, longitude, KAABA.lat, KAABA.lng);
+
+    $('kiblat-degree').textContent = `${Math.round(kState.qiblaAngle)}°`;
+    $('info-lat').textContent = latitude.toFixed(4) + '°';
+    $('info-lng').textContent = longitude.toFixed(4) + '°';
+    $('info-dist').textContent = dist.toLocaleString('id-ID');
+
+    try {
+      const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=id`);
+      const gd = await geoRes.json();
+      const loc = gd.city || gd.locality || `${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°`;
+      $('kiblat-loc').textContent = `📍 ${loc}`;
+    } catch { $('kiblat-loc').textContent = `📍 ${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°`; }
+
+    $('loading-kiblat').classList.add('hidden');
+    $('compass-section').classList.remove('hidden');
+    $('info-cards').classList.remove('hidden');
+    updateKiblatArrow();
+    startCompass();
+  }, err => {
+    showError(err.code === 1 ? 'Akses lokasi ditolak. Aktifkan GPS dan coba lagi.' : 'Gagal mendapatkan lokasi.');
+  }, { timeout: 10000 });
+}
+
+function updateKiblatArrow() {
+  const relative = ((kState.qiblaAngle - kState.compassHeading) + 360) % 360;
+  $('kiblat-arrow-wrap').style.transform = `rotate(${relative}deg)`;
+  $('info-heading').textContent = `${Math.round(kState.compassHeading)}°`;
+}
+
+function startCompass() {
+  if (window.DeviceOrientationEvent) {
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission()
+        .then(perm => { if (perm === 'granted') window.addEventListener('deviceorientation', handleOrientation, true); })
+        .catch(() => showToast('Izin kompas ditolak'));
+    } else {
+      window.addEventListener('deviceorientation', handleOrientation, true);
+    }
+  } else {
+    $('compass-status').textContent = '⚠ Kompas tidak tersedia';
+    $('compass-status').className = 'status-badge status-inactive';
+    showToast('Sensor kompas tidak tersedia di perangkat ini');
+  }
+}
+
+function handleOrientation(e) {
+  let heading = e.webkitCompassHeading || (e.alpha ? (360 - e.alpha) : 0);
+  kState.compassHeading = heading;
+  $('needle-wrap').style.transform = `rotate(${-heading}deg)`;
+  updateKiblatArrow();
+}
+
+function showError(msg) {
+  $('loading-kiblat').classList.add('hidden');
+  $('error-kiblat').classList.remove('hidden');
+  $('error-kiblat-msg').textContent = msg;
+}
+</script>
+</body>
+</html>

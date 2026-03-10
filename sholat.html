@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1E7F4B" />
+  <title>Jadwal Sholat — Muslim Daily</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <style>
+    .page-scroll { flex: 1; overflow-y: auto; padding-bottom: 1rem; }
+
+    /* Hero countdown */
+    .sholat-hero { background: linear-gradient(135deg, #0a2440 0%, #0d3060 50%, #0a1e38 100%); padding: 1.5rem 1.25rem; position: relative; overflow: hidden; }
+    .sholat-hero::before { content: '🕌'; position: absolute; right: -20px; top: -20px; font-size: 8rem; opacity: .04; transform: rotate(10deg); }
+    [data-theme="light"] .sholat-hero { background: linear-gradient(135deg, #1a4d6a 0%, #1E7F4B 50%, #0f3d5a 100%); }
+
+    .hero-label { font-size: .7rem; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .3rem; }
+    .hero-name { font-size: 1.6rem; font-weight: 700; color: #fff; margin-bottom: .3rem; }
+    .hero-countdown { font-size: 2.4rem; font-weight: 300; color: var(--gold-light); letter-spacing: .05em; font-variant-numeric: tabular-nums; margin-bottom: .75rem; }
+    .hero-bottom { display: flex; align-items: center; justify-content: space-between; }
+    .hero-location { font-size: .78rem; color: rgba(255,255,255,.55); }
+    .hero-hijri { font-family: 'Amiri', serif; font-size: .95rem; color: var(--gold-light); }
+
+    /* Progress bar */
+    .prayer-progress-wrap { height: 5px; background: rgba(255,255,255,.12); border-radius: 99px; overflow: hidden; margin: .75rem 0 0; }
+    .prayer-progress-bar { height: 100%; background: linear-gradient(90deg, var(--green-light), var(--gold)); border-radius: 99px; transition: width .5s ease; width: 0%; }
+
+    /* Prayer list */
+    .sholat-list { padding: .75rem 1.25rem; display: flex; flex-direction: column; gap: .5rem; }
+    .sholat-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: .875rem 1.25rem; display: flex; align-items: center; gap: 1rem; transition: all .2s; }
+    .sholat-item.active-prayer { background: rgba(30,127,75,.08); border-color: rgba(30,127,75,.4); border-left: 3px solid var(--green-light); }
+    .sholat-item.next-prayer { border-color: rgba(201,168,76,.3); border-left: 3px solid var(--gold); }
+    .sholat-icon { font-size: 1.4rem; }
+    .sholat-info { flex: 1; }
+    .sholat-name { font-size: .95rem; font-weight: 600; display: flex; align-items: center; gap: .5rem; }
+    .sholat-arabic { font-family: 'Amiri', serif; font-size: .9rem; color: var(--text-muted); }
+    .sholat-time { font-size: 1.2rem; font-weight: 600; color: var(--text); }
+    .sholat-badge { font-size: .62rem; font-weight: 700; padding: .15rem .4rem; border-radius: 99px; }
+    .badge-active { background: rgba(30,127,75,.2); color: var(--green-light); }
+    .badge-next { background: rgba(201,168,76,.15); color: var(--gold); }
+
+    /* Loading / Error */
+    .loading-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1.25rem; gap: 1rem; }
+    .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--green-light); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: .85rem; color: var(--text-muted); }
+    .error-card { margin: 1.25rem; background: var(--bg-card); border: 1px solid rgba(248,113,113,.3); border-radius: 16px; padding: 1.5rem; text-align: center; }
+    .error-icon { font-size: 2rem; margin-bottom: .5rem; }
+    .error-msg { font-size: .85rem; color: var(--text-muted); margin-bottom: 1rem; }
+
+    /* Sunnah section */
+    .sunnah-section { padding: .5rem 1.25rem 1rem; }
+    .sunnah-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .75rem; }
+    .sunnah-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: .75rem; text-align: center; }
+    .sunnah-name { font-size: .8rem; font-weight: 600; margin-bottom: .2rem; }
+    .sunnah-rakaat { font-size: .72rem; color: var(--text-muted); }
+    .sunnah-time { font-size: .72rem; color: var(--green-light); font-weight: 600; margin-top: .2rem; }
+  </style>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="../index.html" class="icon-btn" style="text-decoration:none;" aria-label="Kembali">←</a>
+      <span class="topbar-logo">🕌</span>
+      <span class="topbar-title">Jadwal Sholat</span>
+    </div>
+    <div class="topbar-right">
+      <button id="dark-mode-toggle" class="icon-btn" aria-label="Toggle tema"><span>🌙</span></button>
+    </div>
+  </header>
+
+  <div class="page-scroll">
+
+    <!-- Hero Countdown -->
+    <div class="sholat-hero" id="sholat-hero">
+      <div class="hero-label">Sholat Berikutnya</div>
+      <div class="hero-name" id="next-name">Memuat...</div>
+      <div class="hero-countdown" id="hero-countdown">--:--:--</div>
+      <div class="prayer-progress-wrap">
+        <div class="prayer-progress-bar" id="prayer-progress"></div>
+      </div>
+      <div class="hero-bottom">
+        <div class="hero-location" id="hero-location">📍 Memuat lokasi...</div>
+        <div class="hero-hijri" id="hero-hijri">—</div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading-wrap" class="loading-wrap">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Mengambil jadwal sholat...</p>
+    </div>
+
+    <!-- Error -->
+    <div id="error-card" class="error-card hidden">
+      <div class="error-icon">📍</div>
+      <p class="error-msg" id="error-msg">Gagal mengambil waktu sholat.</p>
+      <button class="btn-primary" id="retry-btn">Coba Lagi</button>
+    </div>
+
+    <!-- Sholat List -->
+    <div id="sholat-list" class="sholat-list hidden"></div>
+
+    <!-- Sunnah Sholat -->
+    <div class="sunnah-section">
+      <div class="section-header">
+        <h3 class="section-title">🌟 Sholat Sunnah</h3>
+      </div>
+      <div class="sunnah-grid">
+        <div class="sunnah-item">
+          <div class="sunnah-name">Qabliyah Subuh</div>
+          <div class="sunnah-rakaat">2 rakaat</div>
+          <div class="sunnah-time">Sebelum Subuh</div>
+        </div>
+        <div class="sunnah-item">
+          <div class="sunnah-name">Dhuha</div>
+          <div class="sunnah-rakaat">2–12 rakaat</div>
+          <div class="sunnah-time">Pagi hari</div>
+        </div>
+        <div class="sunnah-item">
+          <div class="sunnah-name">Qabliyah & Ba'diyah Dzuhur</div>
+          <div class="sunnah-rakaat">4 rakaat</div>
+          <div class="sunnah-time">Sebelum & sesudah Dzuhur</div>
+        </div>
+        <div class="sunnah-item">
+          <div class="sunnah-name">Ba'diyah Maghrib</div>
+          <div class="sunnah-rakaat">2 rakaat</div>
+          <div class="sunnah-time">Setelah Maghrib</div>
+        </div>
+        <div class="sunnah-item">
+          <div class="sunnah-name">Ba'diyah Isya</div>
+          <div class="sunnah-rakaat">2 rakaat</div>
+          <div class="sunnah-time">Setelah Isya</div>
+        </div>
+        <div class="sunnah-item">
+          <div class="sunnah-name">Tahajud</div>
+          <div class="sunnah-rakaat">2–8 rakaat + witir</div>
+          <div class="sunnah-time">1/3 malam</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-scroll -->
+</div><!-- /app -->
+
+<div id="toast" class="toast" aria-live="polite"></div>
+<script src="../js/shared.js"></script>
+<script>
+'use strict';
+
+const PRAYER_NAMES = {
+  Fajr: { name: 'Subuh', arabic: 'الفَجْر', icon: '🌅' },
+  Dhuhr: { name: 'Dzuhur', arabic: 'الظُّهْر', icon: '☀️' },
+  Asr: { name: 'Ashar', arabic: 'العَصْر', icon: '🌤️' },
+  Maghrib: { name: 'Maghrib', arabic: 'الْمَغْرِب', icon: '🌆' },
+  Isha: { name: 'Isya', arabic: 'العِشَاء', icon: '🌙' }
+};
+
+let pState = { prayerTimes: null, nextPrayer: null, location: '—', countdownInterval: null };
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  fetchPrayerTimes();
+  document.getElementById('retry-btn').addEventListener('click', fetchPrayerTimes);
+});
+
+function getLocation() {
+  return new Promise((res, rej) => {
+    if (!navigator.geolocation) rej(new Error('Not supported'));
+    navigator.geolocation.getCurrentPosition(res, rej, { timeout: 10000, maximumAge: 300000 });
+  });
+}
+
+async function fetchPrayerTimes() {
+  $('loading-wrap').classList.remove('hidden');
+  $('error-card').classList.add('hidden');
+  $('sholat-list').classList.add('hidden');
+
+  const CACHE_KEY = 'md-prayer-cache';
+  const today = todayDateStr();
+
+  try {
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if (cached && cached.date === today && cached.timings) {
+      pState.prayerTimes = cached.timings;
+      pState.location = cached.location || '—';
+      $('hero-hijri').textContent = cached.hijriStr || '—';
+      $('hero-location').textContent = `📍 ${pState.location}`;
+      $('loading-wrap').classList.add('hidden');
+      $('sholat-list').classList.remove('hidden');
+      renderPrayerList();
+      startCountdown();
+      return;
+    }
+  } catch {}
+
+  try {
+    const pos = await getLocation();
+    const { latitude, longitude } = pos.coords;
+    pState.location = `${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°`;
+
+    const url = `https://api.aladhan.com/v1/timings/${Math.floor(Date.now() / 1000)}?latitude=${latitude}&longitude=${longitude}&method=11`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    if (data.code !== 200) throw new Error('Bad response');
+
+    pState.prayerTimes = data.data.timings;
+    const hijri = data.data.date.hijri;
+    const hijriStr = `${hijri.day} ${hijri.month.en} ${hijri.year} H`;
+
+    $('hero-hijri').textContent = hijriStr;
+
+    try {
+      const geo = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=id`);
+      const gd = await geo.json();
+      pState.location = gd.city || gd.locality || pState.location;
+    } catch {}
+
+    $('hero-location').textContent = `📍 ${pState.location}`;
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ date: today, timings: pState.prayerTimes, hijri: true, hijriStr, location: pState.location }));
+
+    $('loading-wrap').classList.add('hidden');
+    $('sholat-list').classList.remove('hidden');
+    renderPrayerList();
+    startCountdown();
+  } catch (err) {
+    $('loading-wrap').classList.add('hidden');
+    $('error-card').classList.remove('hidden');
+    $('error-msg').textContent = err.code === 1 ? 'Akses lokasi ditolak. Aktifkan GPS dan coba lagi.' : 'Gagal mengambil jadwal. Periksa koneksi internet.';
+  }
+}
+
+function renderPrayerList() {
+  if (!pState.prayerTimes) return;
+  const now = new Date();
+  const keys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const prayers = keys.map(k => {
+    const [h, m] = pState.prayerTimes[k].split(':').map(Number);
+    return { key: k, ...PRAYER_NAMES[k], minutes: h * 60 + m, time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` };
+  });
+
+  let activeIdx = -1;
+  for (let i = 0; i < prayers.length; i++) { if (nowMin >= prayers[i].minutes) activeIdx = i; }
+  const nextIdx = activeIdx === prayers.length - 1 ? 0 : activeIdx === -1 ? 0 : activeIdx + 1;
+  pState.nextPrayer = prayers[nextIdx];
+  $('next-name').textContent = prayers[nextIdx].name;
+
+  updateProgressBar(prayers, nowMin, activeIdx, nextIdx);
+
+  $('sholat-list').innerHTML = prayers.map((p, i) => {
+    const isActive = i === activeIdx, isNext = i === nextIdx && i !== activeIdx;
+    const badge = isActive ? `<span class="sholat-badge badge-active">Waktu Ini</span>` : isNext ? `<span class="sholat-badge badge-next">Berikutnya</span>` : '';
+    return `<div class="sholat-item ${isActive ? 'active-prayer' : ''} ${isNext ? 'next-prayer' : ''}">
+      <span class="sholat-icon">${p.icon}</span>
+      <div class="sholat-info">
+        <div class="sholat-name">${p.name} ${badge}</div>
+        <div class="sholat-arabic">${p.arabic}</div>
+      </div>
+      <div class="sholat-time">${p.time}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateProgressBar(prayers, nowMin, activeIdx, nextIdx) {
+  const bar = $('prayer-progress');
+  if (!bar) return;
+  const prev = activeIdx >= 0 ? prayers[activeIdx].minutes : 0;
+  const next = nextIdx >= 0 ? prayers[nextIdx].minutes : 24 * 60;
+  const span = next > prev ? next - prev : (24 * 60 - prev) + next;
+  const elapsed = nowMin >= prev ? nowMin - prev : (24 * 60 - prev) + nowMin;
+  bar.style.width = `${Math.min((elapsed / span) * 100, 100)}%`;
+}
+
+function startCountdown() {
+  if (pState.countdownInterval) clearInterval(pState.countdownInterval);
+  pState.countdownInterval = setInterval(tick, 1000);
+  tick();
+}
+
+function tick() {
+  if (!pState.prayerTimes) return;
+  const now = new Date();
+  const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+  const keys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const times = keys.map(k => { const [h, m] = pState.prayerTimes[k].split(':').map(Number); return h * 3600 + m * 60; });
+  const timesMin = keys.map(k => { const [h, m] = pState.prayerTimes[k].split(':').map(Number); return h * 60 + m; });
+
+  let activeIdx = -1;
+  for (let i = 0; i < timesMin.length; i++) { if (nowMin >= timesMin[i]) activeIdx = i; }
+  const nextIdx = activeIdx === timesMin.length - 1 ? 0 : activeIdx === -1 ? 0 : activeIdx + 1;
+
+  let diff = times[nextIdx] - nowSec;
+  if (diff < 0) diff += 86400;
+
+  const h = Math.floor(diff / 3600), m = Math.floor((diff % 3600) / 60), s = diff % 60;
+  $('hero-countdown').textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+</script>
+</body>
+</html>
